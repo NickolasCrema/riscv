@@ -37,6 +37,69 @@ class Parser:
                 raise Exception('Opcode não suportado')
         return instructions
 
+
+    def parser(self, text):
+        instructions = []
+        lines = text.split('\n')
+        for line in lines:
+            opcode = line[-7:]
+            #addi
+            if opcode == '0010011':
+                imm = line[:12]
+                rs1 = line[11:16]
+                funct3 = line[16:19]
+                rd = line[19:24]
+                if funct3 == '000':
+                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=Control_unit(0, 0, 0, b'10', 0, 1, 1) ))
+            #lw
+            elif opcode == '0000011':
+                imm = line[:12]
+                rs1 = line[11:16]
+                funct3 = line[16:19]
+                rd = line[19:24]
+                if funct3 == '010':
+                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=Control_unit(0, 1, 1, b'10', 0, 1, 1)))
+            #r-type
+            elif opcode == '0110011':
+                funct7 = line[:7]
+                rs2 = line[6:11]
+                rs1 = line[11:16]
+                funct3 = line[16:19]
+                rd = line[19:24]
+                #add
+                if funct7 == '0000000' and funct3 == '000':
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'00', 0, 0, 1)))
+                #sub
+                elif funct7 == '0100000' and funct3 == '000':
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'01', 0, 0, 1)))
+                #and
+                elif funct7 == '0000000' and funct3 == '111':
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
+                #or
+                elif funct7 == '0000000' and funct3 == '110':
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
+            #sw
+            elif opcode == '0100011':
+                funct7 = 'X'
+                rs2 = line[6:11]
+                rs1 = line[11:16]
+                funct3 = line[16:19]
+                imm = line[19:24]
+                if funct3 == '010':
+                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 1, 1, 0)))
+            #b-type
+            elif opcode == '1100011':
+                flag = line[:7]
+                rs2 = line[6:11]
+                rs1 = line[11:16]
+                funct3 = line[16:19]
+                imm = line[19:24]
+                if flag == '1111111':
+                    '''C-2 in immediate'''
+                if funct3 == '000':
+                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, 'X', control_unit=Control_unit(1, 0, 0, b'01', 0, 0, 0)))
+                elif funct3 == '001':
+                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, 'X', control_unit=Control_unit(1, 0, 0, b'11', 0, 0, 0)))
     def parser(self, text):
         instructions = []
         lines = text.split('\n')

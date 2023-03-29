@@ -1,26 +1,21 @@
 from Instruction import Instruction
 class CPU:
-    def __init__(self, memory):
-        self.reg = [0] * 32
+    def __init__(self,  instruction_memory):
+        self.reg = {}
+        for i in range(32):
+            self.reg[i] = 0
         self.pc = 0
-        self.memory = memory
+        self.memory = {}
+        self.instruction_memory = instruction_memory
 
     def fetch(self):
         # buscar a instrução apontada pelo PC
-        instr = self.memory[self.pc]
+        buf_size = len(self.instruction_memory)
+        if self.pc == buf_size:
+            return
+        instr = self.instruction_memory[self.pc]
         self.pc += 1
         return instr
-
-    def decode(self, instr):
-        # decodificar a instrução
-        opcode = (instr >> 0) & 0b1111111
-        rd = (instr >> 7) & 0b11111
-        funct3 = (instr >> 12) & 0b111
-        rs1 = (instr >> 15) & 0b11111
-        rs2 = (instr >> 20) & 0b11111
-        funct7 = (instr >> 25) & 0b1111111
-        imm = ((instr >> 20) & 0xfff) | ((instr >> 31) * 0xfffff000)
-        return Instruction(opcode, rd, rs1, rs2, imm, funct3, funct7)
 
     def execute(self, instr):
         # executar a instrução
@@ -32,57 +27,88 @@ class CPU:
         funct7 = instr.funct7
         imm = instr.imm
 
-        if opcode == 0b0110011:
-            # R-type instruction
-            if funct3 == 0b000:
+        # Tipo R
+        if opcode == b'0110011':
+            if funct3 == b'000' and funct7 == b'0000000':
                 # add
+                print('---------Instrução add---------')
                 self.reg[rd] = self.reg[rs1] + self.reg[rs2]
-            elif funct3 == 0b001:
-                # sll
-                self.reg[rd] = self.reg[rs1] << self.reg[rs2]
-            elif funct3 == 0b010:
-                # slt
-                self.reg[rd] = int(self.reg[rs1] < self.reg[rs2])
-            elif funct3 == 0b011:
-                # sltu
-                self.reg[rd] = int((self.reg[rs1] & 0xffffffff) < (self.reg[rs2] & 0xffffffff))
-            elif funct3 == 0b100:
-                # xor
-                self.reg[rd] = self.reg[rs1] ^ self.reg[rs2]
-            elif funct3 == 0b101:
-                # srl/sra
-                if funct7 == 0b0000000:
-                    # srl
-                    self.reg[rd] = self.reg[rs1] >> self.reg[rs2]
-                elif funct7 == 0b0100000:
-                    # sra
-                    self.reg[rd] = (self.reg[rs1] >> self.reg[rs2]) | (self.reg[rs1] & 0x80000000)
-            elif funct3 == 0b110:
+                print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                      self.reg[rs2])
+                instr.controlSignals()
+            elif funct3 == b'000' and funct7 == b'0100000':
+                #sub
+                print('---------Instrução sub---------')
+                self.reg[rd] = self.reg[rs1] - self.reg[rs2]
+                print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                      self.reg[rs2])
+                instr.controlSignals()
+            elif funct3 == b'110':
                 # or
+                print('---------Instrução or---------')
                 self.reg[rd] = self.reg[rs1] | self.reg[rs2]
-            elif funct3 == 0b111:
+                print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                      self.reg[rs2])
+                instr.controlSignals()
+            elif funct3 == b'111':
                 # and
+                print('---------Instrução and---------')
                 self.reg[rd] = self.reg[rs1] & self.reg[rs2]
-        elif opcode == 0b0000011:
-            # lw
-            address = self.reg[rs1] + imm
-            self.reg[rd] = self.memory[address]
+                print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                      self.reg[rs2])
+                instr.controlSignals()
 
-        elif opcode == 0b0100011:
-            # sw
+        #lw
+        elif opcode == b'0000011':
+            print('---------Instrução lw---------')
+            address = self.reg[rs1] + imm
+            if self.memory.get(address) == None:
+                self.reg[rd] = 0
+            else:
+                self.reg[rd] = self.memory.get(address)
+            print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=', self.reg[rs2])
+            instr.controlSignals()
+        #sw
+        elif opcode == b'0100011':
+            print('---------Instrução sw---------')
+            print(self.reg[rs1], self.reg[rs2], self.memory, imm)
+
             address = self.reg[rs1] + imm
             self.memory[address] = self.reg[rs2]
-        elif opcode == 0b1100011:
+            print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=', self.reg[rs2])
+            instr.controlSignals()
+        #Tipo B
+        elif opcode == b'1100111':
             # beq
-            if self.reg[rs1] == self.reg[rs2]:
-                self.pc += imm
+            if funct3 == b'000':
+                print('---------Instrução beq---------')
+                if self.reg[rs1] == self.reg[rs2]:
+                    self.pc += imm
+                    print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                          self.reg[rs2])
+                    instr.controlSignals()
+            elif funct3 == b'001':
+                print('---------Instrução bne---------')
+                if self.reg[rs1] != self.reg[rs2]:
+                    self.pc += imm
+                    print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                          self.reg[rs2])
+                    instr.controlSignals()
+        #Tipo I
+        elif opcode == b'0010011':
+            if funct3 == b'000':
+                # addi
+                print('---------Instrução addi---------')
+                self.reg[rd] = self.reg[rs1] + imm
+                print('rd:', rd, '=', self.reg[rd], '\trs1:', rs1, '=', self.reg[rs1], '\trs2:', rs2, '=',
+                      self.reg[rs2])
+                instr.controlSignals()
         else:
             raise Exception('opcode não suportado')
 
     def run(self):
         while True:
             instr = self.fetch()
-            if instr == 0:
+            if instr is None:
                 break
-            instr = self.decode(instr)
             self.execute(instr)

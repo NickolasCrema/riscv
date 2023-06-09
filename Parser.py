@@ -1,183 +1,138 @@
 from Instruction import Instruction
-from Control_unit import Control_unit
-class Parser:
-    def parse(self, text):
-        instructions = []
-        lines = text.strip().split('\n')
-        for line in lines:
-            opcode, args = line.split(' ', 1)
-            if opcode == 'add':
-                rd, rs1, rs2 = map(int, args.split(','))
-                instructions.append(Instruction(b'0110011', rd, rs1, rs2, 0, b'000', b'0000000', control_unit=Control_unit(0, 0, 0, b'00', 0, 0, 1)))
-            elif opcode == 'sub':
-                rd, rs1, rs2 = map(int, args.split(','))
-                instructions.append(Instruction(b'0110011', rd, rs1, rs2, 0, b'000', b'0100000', control_unit=Control_unit(0, 0, 0, b'01', 0, 0, 1)))
-            elif opcode == 'and':
-                rd, rs1, rs2 = map(int, args.split(','))
-                instructions.append(Instruction(b'0110011', rd, rs1, rs2, 0, b'111', b'0000000', control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
-            elif opcode == 'or':
-                rd, rs1, rs2 = map(int, args.split(','))
-                instructions.append(Instruction(b'0110011', rd, rs1, rs2, 0, b'110', b'0000000', control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
-            elif opcode == 'addi':
-                rd, rs1, imm = map(int, args.split(','))
-                instructions.append(Instruction(b'0010011', rd, rs1, 0, imm, b'000', b'0000000', control_unit=Control_unit(0, 0, 0, b'10', 0, 1, 1)))
-            elif opcode == 'lw':
-                rd, imm, rs1 = map(int, args.replace('(', ',').replace(')', '').split(','))
-                instructions.append(Instruction(b'0000011', rd, rs1, 0, imm, b'010', b'0000000', control_unit=Control_unit(0, 1, 1, b'10', 0, 1, 1)))
-            elif opcode == 'sw':
-                rs2, imm, rs1 = map(int, args.replace('(', ',').replace(')', '').split(','))
-                instructions.append(Instruction(b'0100011', 0, rs1, rs2, imm, b'010', b'0000000', control_unit=Control_unit(0, 0, 0, b'10', 1, 1, 0)))
-            elif opcode == 'beq':
-                rs1, rs2, imm = map(int, args.split(','))
-                instructions.append(Instruction(b'1100111', 0, rs1, rs2, imm, b'000', b'0000000', control_unit=Control_unit(1, 0, 0, b'01', 0, 0, 0)))
-            elif opcode == 'bne':
-                rs1, rs2, imm = map(int, args.split(','))
-                instructions.append(Instruction(b'1100111', 0, rs1, rs2, imm, b'001', b'0000000', control_unit=Control_unit(1, 0, 0, b'11', 0, 0, 0)))
-            else:
-                raise Exception('Opcode não suportado')
-        return instructions
+from ControlUnit import ControlUnit
 
+class Parser:
+    """@RISC_V PARSER"""
 
     def parser(self, text):
+        """@Parses binary instructions to type 'Instruction' instructions \n
+        @Params:
+          - text: String that represents full text of an instructions file \n
+        @Return:
+          - instructions: List containing all the parsed instructions \n
+        @Precondition: File read correctly \n
+        @Postcondition: Parsed instructions"""
         instructions = []
         lines = text.split('\n')
         for line in lines:
             opcode = line[-7:]
             #addi
             if opcode == '0010011':
-                imm = line[:12]
-                rs1 = line[11:16]
-                funct3 = line[16:19]
-                rd = line[19:24]
+                imm = int(line[:12], 2)
+                rs1 = int(line[12:17], 2)
+                funct3 = line[17:20]
+                rd = int(line[20:25], 2)
                 if funct3 == '000':
-                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=Control_unit(0, 0, 0, b'10', 0, 1, 1) ))
+                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 'X', control_unit=ControlUnit(0, 0, 0, b'10', 0, 1, 1)))
             #lw
             elif opcode == '0000011':
-                imm = line[:12]
-                rs1 = line[11:16]
-                funct3 = line[16:19]
-                rd = line[19:24]
+                imm = int(line[:12], 2)
+                rs1 = int(line[12:17], 2)
+                funct3 = line[17:20]
+                rd = int(line[20:25], 2)
                 if funct3 == '010':
-                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=Control_unit(0, 1, 1, b'10', 0, 1, 1)))
+                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=ControlUnit(0, 1, 1, b'10', 0, 1, 1)))
             #r-type
             elif opcode == '0110011':
                 funct7 = line[:7]
-                rs2 = line[6:11]
-                rs1 = line[11:16]
-                funct3 = line[16:19]
-                rd = line[19:24]
+                rs2 = int(line[7:12], 2)
+                rs1 = int(line[12:17], 2)
+                funct3 = line[17:20]
+                rd = int(line[20:25], 2)
+
                 #add
                 if funct7 == '0000000' and funct3 == '000':
-                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'00', 0, 0, 1)))
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=ControlUnit(0, 0, 0, b'00', 0, 0, 1)))
                 #sub
                 elif funct7 == '0100000' and funct3 == '000':
-                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'01', 0, 0, 1)))
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=ControlUnit(0, 0, 0, b'01', 0, 0, 1)))
                 #and
                 elif funct7 == '0000000' and funct3 == '111':
-                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=ControlUnit(0, 0, 0, b'10', 0, 0, 1)))
                 #or
                 elif funct7 == '0000000' and funct3 == '110':
-                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
+                    instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=ControlUnit(0, 0, 0, b'10', 0, 0, 1)))
             #sw
             elif opcode == '0100011':
                 funct7 = 'X'
-                rs2 = line[6:11]
-                rs1 = line[11:16]
-                funct3 = line[16:19]
-                imm = line[19:24]
+                rs2 = int(line[7:12], 2)
+                rs1 = int(line[12:17], 2)
+                funct3 = line[17:20]
+                imm = int(line[20:25], 2)
                 if funct3 == '010':
-                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 1, 1, 0)))
+                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, funct7, control_unit=ControlUnit(0, 0, 0, b'10', 1, 1, 0)))
             #b-type
             elif opcode == '1100011':
                 flag = line[:7]
-                rs2 = line[6:11]
-                rs1 = line[11:16]
-                funct3 = line[16:19]
-                imm = line[19:24]
+                rs2 = int(line[7:12], 2)
+                rs1 = int(line[12:17], 2)
+                funct3 = line[17:20]
+                imm = str(line[20:25])
                 if flag == '1111111':
-                    '''C-2 in immediate'''
-                if funct3 == '000':
-                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, 'X', control_unit=Control_unit(1, 0, 0, b'01', 0, 0, 0)))
-                elif funct3 == '001':
-                    instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, 'X', control_unit=Control_unit(1, 0, 0, b'11', 0, 0, 0)))
-    def parser(self, text):
-        instructions = []
-        lines = text.split('\n')
-        for line in lines:
-            buf = lines.split(' ')
-            if len(buf[0]) == 12:
-                opcode = buf[4]
-                funct3 = buf[2]
-                #addi
-                if opcode == '0010011' and funct3 == '000':
-                    rd = buf[3]
-                    imm = int(buf[0],2)
-                    rs1 = int(buf[1], 2)
-                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=Control_unit(0, 0, 0, b'10', 0, 1, 1)))
-                #lw
-                elif opcode == '0000011' and funct3 == '010':
-                    rd = buf[3]
-                    imm = int(buf[0],2)
-                    rs1 = int(buf[0],2)
-                    instructions.append(Instruction(opcode, rd, rs1, 0, imm, funct3, 0, control_unit=Control_unit(0, 0, 0, b'10', 0, 1, 1)))
-                else:
-                    print('instrução não suportada - PARSE ERROR')
-                    return
-            else:
-                opcode = buf[5]
-                funct3 = buf[3]
-                #r-type
-                if opcode == '0110011':
-                    funct7 = buf[0]
-                    rs2 = buf[1]
-                    rs1 = buf[2]
-                    rd = buf[4]
-                    if funct7 == '0000000':
-                        #add
-                        if funct3 == '000':
-                            instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'00', 0, 0, 1) ))
-                        #and
-                        elif funct3 == '111':
-                            instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
-                        #or
-                        elif funct3 == '110':
-                            instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 0, 0, 1)))
-                        else:
-                            print('instrução não suportada - PARSE ERROR')
-                            return
-                    elif funct7 == '0100000':
-                        #sub
-                        if funct3 == '000':
-                            instructions.append(Instruction(opcode, rd, rs1, rs2, 0, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'01', 0, 0, 1)))
-                        else:
-                            print('instrução não suportada - PARSE ERROR')
-                            return
-                #sw
-                elif opcode == '0100011':
-                    if funct3 == '010':
-                        funct7 = buf[0]
-                        rs2 = buf[1]
-                        rs1 = buf[2]
-                        imm = buf[4]
-                        instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, funct7, control_unit=Control_unit(0, 0, 0, b'10', 1, 1, 0)))
-                #b-type
-                elif opcode == '1100111':
-                    funct7 = buf[0]
-                    #beq
                     if funct3 == '000':
-                        if funct7 == '0000000':
-                            ''''do something'''
-                        elif funct7 == '1111111':
-                            ''''do something'''
-                        else:
-                            print("erro 'funct7' - PARSE ERROR")
-                    #bne
+                        imm = int(self.reverse_2_complement(imm), 2)
+                        instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, flag, control_unit=ControlUnit(1, 0, 0, b'01', 0, 0, 0)))
                     elif funct3 == '001':
-                        if funct7 == '0000000':
-                            ''''do something'''
-                        elif funct7 == '1111111':
-                            '''do something'''
-                        else:
-                            print("erro 'funct7' - PARSE ERROR")
+                        imm = int(self.reverse_2_complement(imm), 2)
+                        print('imm', imm)
+                        instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, flag, control_unit=ControlUnit(1, 0, 0, b'11', 0, 0, 0)))
+                if flag == '0000000':
+                    if funct3 == '000':
+                        imm = int(self.reverse_2_complement(imm), 2)
+                        instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, flag, control_unit=ControlUnit(1, 0, 0, b'01', 0, 0, 0)))
+                    elif funct3 == '001':
+                        imm = int(self.reverse_2_complement(imm), 2)
+                        instructions.append(Instruction(opcode, 0, rs1, rs2, imm, funct3, flag, control_unit=ControlUnit(1, 0, 0, b'11', 0, 0, 0)))
+        return instructions
+
+    def reverse_2_complement(self, text):
+        """@Decode 2s complement binary to an unsigned representation binary \n
+        @Params:
+           - text: String representing binary to be decoded \n
+        @Return:
+           - str_bin: String that represents the binary decoded \n
+        @Precondition: Input binary string must be at 2s complement representation \n
+        @Postcondition: Returns the unsigned representation of the binary"""
+        list = []
+        for i in text:
+            list.append(i)
+        if list[len(list) - 1] == '1':
+            list[len(list) - 1] = '0'
+            for i in range(len(list)):
+                if list[i] == '1':
+                    list[i] = '0'
+                else:
+                    list[i] = '1'
+            if list[len(list) - 1] == '0':
+                list[len(list) - 1] = '1'
+            else:
+                for j in reversed(range(len(list))):
+                    if list[j] == '0':
+                        list[j] = '1'
+                        break
                     else:
-                        print('instrução não suportada - PARSE ERROR')
+                        list[j] = '0'
+        elif list[len(list)-1] == '0':
+            for i in reversed(range(len(list))):
+                if list[i] == '0':
+                    list[i] = '1'
+                else:
+                    list[i] = '0'
+                    break
+            for i in range(len(list)):
+                if list[i] == '1':
+                    list[i] = '0'
+                else:
+                    list[i] = '1'
+            if list[len(list) - 1] == '0':
+                list[len(list) - 1] = '1'
+            else:
+                for j in reversed(range(len(list))):
+                    if list[j] == '0':
+                        list[j] = '1'
+                        break
+                    else:
+                        list[j] = '0'
+
+        str_bin = ''.join(list)
+        return str_bin

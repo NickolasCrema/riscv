@@ -1,5 +1,5 @@
-#Class for control unit
 class ControlUnit:
+    """@Class for control unit"""
     def __init__(self, branch, mem_read, mem_to_reg, alu_op, mem_write, alu_src, reg_write):
         self.branch =  branch
         self.mem_read = mem_read

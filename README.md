@@ -8,4 +8,6 @@ O intuito do trabalho é desenvolver em alto nível uma simulação de funcionam
   <img src='https://github.com/NickolasCrema/imagens_readmes/blob/main/riscv/teste-2.png?raw=true' width=700px/>
   <img src='https://github.com/NickolasCrema/imagens_readmes/blob/main/riscv/teste-3.png?raw=true' width=700px/>
   <img src='https://github.com/NickolasCrema/imagens_readmes/blob/main/riscv/teste-4.png?raw=true' width=700px/>
+  <img src='https://github.com/NickolasCrema/imagens_readmes/blob/main/riscv/teste-5.png?raw=true' width=700px/>
+  
 </div>
